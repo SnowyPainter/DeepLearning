@@ -50,7 +50,7 @@ class ManWomanDataset:
             print("X:{} Y:{}".format(x, getMsg(self.Y[i])))
 
     def to_file(self, filename):
-        with open(filename, 'w') as csvout:
+        with open(filename, 'w', newline='') as csvout:
             writer = csv.writer(csvout, delimiter = ',')
             writer.writerow([ f for f in ["Height", "Weight", "Head Round", "Shoulder Width", "Woman"]])
 
@@ -60,8 +60,8 @@ class ManWomanDataset:
 
 D = ManWomanDataset() 
 
-D.generate(10000)
+D.generate(30000)
 
 D.to_file("./man_woman_dataset.csv")
 
-D.print_all()
+#D.print_all()
