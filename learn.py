@@ -19,16 +19,17 @@ class TwoLayerMachine:
             for j in range(x.shape[1]):
                 
                 g[i][j] = self.part_diff(f, x[i][j])
-                
+                print("s {}".format(g[i][j]))
+        print(g)
         return g
 
     def xentropy_loss(self,x,t):
-        xentropy = lambda y,t : -1*np.sum(t * np.ln(y+1e-7))
+        xentropy = lambda y,t : -1*np.sum(t * np.log(y+1e-4))
         
         return xentropy(self.predict(x),t)
 
     def sigmoid(self,x):
-        return 1/(1+np.exp(-x))
+        return 1/(1+np.exp(-x+1e-4))
     
     def softmax(self,x):
         expx = np.exp(x)
@@ -54,8 +55,6 @@ class TwoLayerMachine:
     def train(self, tx, ty, lr=0.01, epoch=100,steps=10000):
         #loss_W the correct loss
         loss_W = lambda W: self.xentropy_loss(tx, ty)
-        print(tx.shape)
-        print(ty.shape)
         log_epoch_loss = []
         for i in range(steps):
             self.W1 -= lr * self.gradient(loss_W, self.W1)
@@ -71,30 +70,36 @@ def csv_to_data(file):
     df = pd.read_csv(file, header=0)
     return list(df.columns.values), df.values
 
+def one_hot_incode(t, size):
+    incoded = np.zeros((t.shape[0], size))
+    for i in range(t.shape[0]):
+        incoded[i][int(t[i])] = int(t[i])
+        
+    return incoded
+
 features, data = csv_to_data("man_woman_dataset.csv")
 
 feature = features[0:-1]
 ylabel = features[-1]
 
-ty = data[:,-1]
+ty = one_hot_incode(data[:,-1],2)
 tx = data[:,:-1]
 
 #InputSize(input's label size same with hiddensize),  hiddenSize , OutputSize
-dl = TwoLayerMachine(tx.shape[1], tx.shape[0], 1)
+dl = TwoLayerMachine(tx.shape[1], tx.shape[0], 2)
 
-losses_step_by_epoch = dl.train(tx, ty)
+#losses_step_by_epoch = dl.train(tx, ty)
 
-for i in range(losses_step_by_epoch.size()):
-    print("{} XEntropy loss : {}".format(i, losses_step_by_epoch[i]))
-
-dl.print_wb()
+#for i in range(losses_step_by_epoch.size()):
+    #print("{} XEntropy loss : {}".format(i, losses_step_by_epoch[i]))
 
 # Height Weight HeadRound ShoulderWidth
 test_case_woman = np.array([166, 54, 56, 3.995])
 test_case_man = np.array([174, 66, 57, 4.552])
 
-test_case = test_case_woman
+test_case = test_case_man
 
-genderY = lambda y: "Man" if(y==0) else "Woman"
+genderY = lambda y: "Man" if(y[0] < y[1]) else "Woman"
 
 print("Test case result : {}".format(genderY(dl.predict(test_case))))
+print("Cross Entropy Loss : {}".format(dl.xentropy_loss(tx,ty)))
