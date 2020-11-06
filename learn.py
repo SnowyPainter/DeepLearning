@@ -100,10 +100,10 @@ def csv_to_data(file):
     df = pd.read_csv(file, header=0)
     return list(df.columns.values), df.values
 
-def one_hot_incode(t, size):
-    incoded = np.zeros((t.shape[0], size))
+def one_hot_incode(t):
+    incoded = np.zeros((t.shape[0], 2))
     for i in range(t.shape[0]):
-        incoded[i][int(t[i])] = int(t[i])
+        incoded[i][int(t[i])] = 1
         
     return incoded
 
@@ -112,7 +112,7 @@ features, data = csv_to_data("man_woman_dataset.csv")
 feature = features[0:-1]
 ylabel = features[-1]
 
-ty = one_hot_incode(data[:,-1],2)
+ty = one_hot_incode(data[:,-1])
 tx = data[:,:-1]
 
 dl = TwoLayerMachine(tx.shape[1], 100, 2)
@@ -133,3 +133,4 @@ genderY = lambda y: "Man" if(y[0] < y[1]) else "Woman"
 print("Test Case : {}".format(test_case))
 
 print("Test case result : {}".format(genderY(dl.predict(test_case))))
+print("At last, The Loss : {}".format(dl.xentropy_loss(test_case, np.array([1,0]))))
