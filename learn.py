@@ -8,20 +8,36 @@ class TwoLayerMachine:
         print("W2 : {}".format(self.W2))
         print("B1 : {}".format(self.B1))
         print("B2 : {}".format(self.B2))
-
-    def part_diff(self,f, x):
+    def gradient_1d(self, f,x):
         h = 1e-4
-        return (f(x + h) - f(x - h)) / (2 * h)
-
+        g = np.zeros_like(x)
+        for i in range(x.shape[0]):
+            tmpx = x[i]
+            x[i] = tmpx + h
+            fx1 = f(x)
+            x[i] = tmpx - h
+            fx2 = f(x)
+            g[i] = (fx1 - fx2) / (2*h)
+            x[i] = tmpx
+        return g
+    
     def gradient(self,f,x):
+        h = 1e-4
         g = np.zeros_like(x)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
-                
-                g[i][j] = self.part_diff(f, x[i][j])
-                print("s {}".format(g[i][j]))
-        print(g)
+                tmpx = x[i][j]
+                x[i][j] = tmpx + h
+                fx1 = f(x)
+                x[i][j] = tmpx - h
+                fx2 = f(x)
+                g[i][j] = (fx1 - fx2) / (2*h)
+                x[i][j] = tmpx
         return g
+
+    def num_gradient(self, x, t):
+        loss_W = lambda W: self.xentropy_loss(x,t)
+        return self.gradient(loss_W, self.W1),self.gradient(loss_W, self.W2),self.gradient_1d(loss_W, self.B1),self.gradient_1d(loss_W, self.B2)
 
     def xentropy_loss(self,x,t):
         xentropy = lambda y,t : -1*np.sum(t * np.log(y+1e-4))
@@ -37,6 +53,9 @@ class TwoLayerMachine:
         return expx / sum_expx
 
     def __init__(self, xsize, hiddensize, outsize):
+        print("Input Size : {}".format(xsize))
+        print("Hidden Layer Size : {}".format(hiddensize))
+
         self.W1 = np.random.randn(xsize, hiddensize)
         self.W2 = np.random.randn(hiddensize, outsize)
 
@@ -52,17 +71,28 @@ class TwoLayerMachine:
 
         return layer2z # == y
 
-    def train(self, tx, ty, lr=0.01, epoch=100,steps=10000):
+    def train(self, tx, ty, lr=0.01, epoch=100,steps=1000):
+        print("Dataset Shape : {}".format(tx.shape))
+        print("Train for dataset {} steps, calculate loss by epoch {}".format(steps, epoch))
+        print("The Learning Rate is {}".format(lr))
+
         #loss_W the correct loss
-        loss_W = lambda W: self.xentropy_loss(tx, ty)
         log_epoch_loss = []
+
         for i in range(steps):
-            self.W1 -= lr * self.gradient(loss_W, self.W1)
-            self.W2 -= lr * self.gradient(loss_W, self.W2)
-            self.B1 -= lr * self.gradient(loss_W, self.B1)
-            self.B2 -= lr * self.gradient(loss_W, self.B2)
+            batch_mask = np.random.choice(tx.shape[0], epoch)
+            x_batch = tx[batch_mask]
+            y_batch = ty[batch_mask]
+            w1,w2,b1,b2 = self.num_gradient(x_batch, y_batch)
+            
+            self.W1 -= lr * w1
+            self.W2 -= lr * w2
+            self.B1 -= lr * b1
+            self.B2 -= lr * b2
+
             if(i%epoch == 0):
-                log_epoch_loss = log_epoch_loss.append(self.xentropy_loss(random.sample(tx, epoch), random.sample(ty, epoch)))
+                print("{}th Epoch Learning ... ".format(i/epoch))
+                log_epoch_loss.append(self.xentropy_loss(x_batch, y_batch))
 
         return log_epoch_loss
 
@@ -85,13 +115,12 @@ ylabel = features[-1]
 ty = one_hot_incode(data[:,-1],2)
 tx = data[:,:-1]
 
-#InputSize(input's label size same with hiddensize),  hiddenSize , OutputSize
-dl = TwoLayerMachine(tx.shape[1], tx.shape[0], 2)
+dl = TwoLayerMachine(tx.shape[1], 100, 2)
 
-#losses_step_by_epoch = dl.train(tx, ty)
+losses_step_by_epoch = dl.train(tx, ty)
 
-#for i in range(losses_step_by_epoch.size()):
-    #print("{} XEntropy loss : {}".format(i, losses_step_by_epoch[i]))
+for i in range(len(losses_step_by_epoch)):
+    print("{}th Epoch Cross-Entropy loss : {}".format(i, losses_step_by_epoch[i]))
 
 # Height Weight HeadRound ShoulderWidth
 test_case_woman = np.array([166, 54, 56, 3.995])
@@ -101,5 +130,6 @@ test_case = test_case_man
 
 genderY = lambda y: "Man" if(y[0] < y[1]) else "Woman"
 
+print("Test Case : {}".format(test_case))
+
 print("Test case result : {}".format(genderY(dl.predict(test_case))))
-print("Cross Entropy Loss : {}".format(dl.xentropy_loss(tx,ty)))
