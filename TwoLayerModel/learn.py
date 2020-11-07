@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import pandas as pd
+import pickle
 
 class TwoLayerMachine:
     def print_wb(self):
@@ -71,7 +72,7 @@ class TwoLayerMachine:
 
         return layer2z # == y
 
-    def train(self, tx, ty, lr=0.01, epoch=100,steps=1000):
+    def train(self, tx, ty, lr=0.05, epoch=100,steps=10000):
         print("Dataset Shape : {}".format(tx.shape))
         print("Train for dataset {} steps, calculate loss by epoch {}".format(steps, epoch))
         print("The Learning Rate is {}".format(lr))
@@ -115,7 +116,7 @@ ylabel = features[-1]
 ty = one_hot_incode(data[:,-1])
 tx = data[:,:-1]
 
-dl = TwoLayerMachine(tx.shape[1], 100, 2)
+dl = TwoLayerMachine(tx.shape[1], 150, 2)
 
 losses_step_by_epoch = dl.train(tx, ty)
 
@@ -134,3 +135,6 @@ print("Test Case : {}".format(test_case))
 
 print("Test case result : {}".format(genderY(dl.predict(test_case))))
 print("At last, The Loss : {}".format(dl.xentropy_loss(test_case, np.array([1,0]))))
+
+with open('model.pkl', 'wb') as output:
+    pickle.dump(dl, output, pickle.HIGHEST_PROTOCOL)
