@@ -108,33 +108,36 @@ def one_hot_incode(t):
         
     return incoded
 
-features, data = csv_to_data("man_woman_dataset.csv")
+def main():
+    features, data = csv_to_data("man_woman_dataset.csv")
 
-feature = features[0:-1]
-ylabel = features[-1]
+    feature = features[0:-1]
+    ylabel = features[-1]
 
-ty = one_hot_incode(data[:,-1])
-tx = data[:,:-1]
+    ty = one_hot_incode(data[:,-1])
+    tx = data[:,:-1]
 
-dl = TwoLayerMachine(tx.shape[1], 150, 2)
+    dl = TwoLayerMachine(tx.shape[1], 150, 2)
 
-losses_step_by_epoch = dl.train(tx, ty)
+    losses_step_by_epoch = dl.train(tx, ty)
 
-for i in range(len(losses_step_by_epoch)):
-    print("{}th Epoch Cross-Entropy loss : {}".format(i, losses_step_by_epoch[i]))
+    for i in range(len(losses_step_by_epoch)):
+        print("{}th Epoch Cross-Entropy loss : {}".format(i, losses_step_by_epoch[i]))
 
-# Height Weight HeadRound ShoulderWidth
-test_case_woman = np.array([166, 54, 56, 3.995])
-test_case_man = np.array([174, 66, 57, 4.552])
+    # Height Weight HeadRound ShoulderWidth
+    test_case_woman = np.array([166, 54, 56, 3.995])
+    test_case_man = np.array([174, 66, 57, 4.552])
 
-test_case = test_case_man
+    test_case = test_case_man
 
-genderY = lambda y: "Man" if(y[0] < y[1]) else "Woman"
+    genderY = lambda y: "Man" if(y[0] < y[1]) else "Woman"
 
-print("Test Case : {}".format(test_case))
+    print("Test Case : {}".format(test_case))
 
-print("Test case result : {}".format(genderY(dl.predict(test_case))))
-print("At last, The Loss : {}".format(dl.xentropy_loss(test_case, np.array([1,0]))))
+    print("Test case result : {}".format(genderY(dl.predict(test_case))))
+    print("At last, The Loss : {}".format(dl.xentropy_loss(test_case, np.array([1,0]))))
 
-with open('model.pkl', 'wb') as output:
-    pickle.dump(dl, output, pickle.HIGHEST_PROTOCOL)
+    with open('model.pkl', 'wb') as output:
+        pickle.dump(dl, output, pickle.HIGHEST_PROTOCOL)
+if __name__=='__main__':
+    main()
